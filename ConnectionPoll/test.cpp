@@ -54,7 +54,7 @@ void test1() {
 void test2() {
 #if 0
     MysqlConn* conn = new MysqlConn();
-    conn->connect("root", "Xuchi3212016614@", "studyMysql", "localhost", 3306);
+    conn->connect("root", "", "studyMysql", "localhost", 3306);
     steady_clock::time_point begin = steady_clock::now();
     thread t1(op1, 0, 1000);
     thread t2(op1, 1000, 2000);
