@@ -1,4 +1,4 @@
-#include "ConnectionPoll.h"
+#include "sqlconnectionPoll.h"
 #include <cstring>
 #include <json/json.h>
 #include <iostream>
@@ -8,7 +8,7 @@
 using namespace Json;
 using namespace std;
 
-ConnectionPoll::ConnectionPoll() {
+sqlconnectionPoll::sqlconnectionPoll() {
     //加载json文件
     if (!parseJsonFile()) {
         return;
@@ -16,13 +16,13 @@ ConnectionPoll::ConnectionPoll() {
     for (int i = 0; i < m_minSize; i++) {
         addConection();
     }
-    thread prodecer(&ConnectionPoll::produceConnection, this);
-    thread recycler(&ConnectionPoll::recycleConnection, this);
+    thread prodecer(&sqlconnectionPoll::produceConnection, this);
+    thread recycler(&sqlconnectionPoll::recycleConnection, this);
     prodecer.detach();
     recycler.detach();
 }
 
-ConnectionPoll::~ConnectionPoll() {
+sqlconnectionPoll::~sqlconnectionPoll() {
     while (m_connectionQ.size()) {
         MysqlConn*conn = m_connectionQ.front();
         m_connectionQ.pop();
@@ -30,7 +30,7 @@ ConnectionPoll::~ConnectionPoll() {
     }
 }
 
-shared_ptr<MysqlConn> ConnectionPoll::getConnection() {
+shared_ptr<MysqlConn> sqlconnectionPoll::getConnection() {
     unique_lock<mutex> locker(m_mutexQ);
     while (m_connectionQ.empty()) {
         if(cv_status::timeout == (m_cond.wait_for(locker, chrono::milliseconds(m_timeout)))) {
@@ -49,7 +49,7 @@ shared_ptr<MysqlConn> ConnectionPoll::getConnection() {
     return connptr;
 }
 
-void ConnectionPoll::addConection() {
+void sqlconnectionPoll::addConection() {
     if (m_connectionQ.size() >= m_maxSize) return;
     MysqlConn* conn = new MysqlConn();
     conn->connect(m_user, m_passwd, m_dbName, m_ip, m_port);
@@ -57,12 +57,12 @@ void ConnectionPoll::addConection() {
     m_connectionQ.push(conn);
 }
 
-ConnectionPoll *ConnectionPoll::getConnectionPoll() {
-    static ConnectionPoll poll;  //单例模式，只有一个实例，只会创建一次
+sqlconnectionPoll *sqlconnectionPoll::getsqlconnectionPoll() {
+    static sqlconnectionPoll poll;  //单例模式，只有一个实例，只会创建一次
     return &poll;
 }
 
-bool ConnectionPoll::parseJsonFile() { 
+bool sqlconnectionPoll::parseJsonFile() { 
     ifstream ifs("../dbconf.json");
     Reader rd;
     Value root;
@@ -82,7 +82,7 @@ bool ConnectionPoll::parseJsonFile() {
     return false;
 }
 
-void ConnectionPoll::produceConnection() {
+void sqlconnectionPoll::produceConnection() {
     while (true) {
         unique_lock<mutex> lock(m_mutexQ);
         while(m_connectionQ.size() >= m_minSize) {  //条件判断最好使用while循环而不是if判断
@@ -94,7 +94,7 @@ void ConnectionPoll::produceConnection() {
     
 }
 
-void ConnectionPoll::recycleConnection() {
+void sqlconnectionPoll::recycleConnection() {
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(500));
         lock_guard<mutex> locker(m_mutexQ);

@@ -1,5 +1,5 @@
-#ifndef CONNECTIONPOLL_H
-#define CONNECTIONPOLL_H
+#ifndef sqlconnectionPoll_H
+#define sqlconnectionPoll_H
 
 #pragma once
 #include <iostream>
@@ -13,15 +13,15 @@ using namespace std;
 
 using namespace std; 
 
-class ConnectionPoll {
+class sqlconnectionPoll {
 public:
-    static ConnectionPoll* getConnectionPoll();
-    ConnectionPoll(const ConnectionPoll& obj) = delete;
-    ConnectionPoll& operator=(const ConnectionPoll& obj) = delete;
+    static sqlconnectionPoll* getsqlconnectionPoll();
+    sqlconnectionPoll(const sqlconnectionPoll& obj) = delete;
+    sqlconnectionPoll& operator=(const sqlconnectionPoll& obj) = delete;
     shared_ptr<MysqlConn> getConnection();
-    ~ConnectionPoll();
+    ~sqlconnectionPoll();
 private:
-    ConnectionPoll();
+    sqlconnectionPoll();
     bool parseJsonFile();
     void produceConnection();
     void recycleConnection();

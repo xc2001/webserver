@@ -12,5 +12,5 @@ set_target_properties(jsoncpp PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "/opt/homebrew/Cellar/jsoncpp/1.9.4_1/include"
 )
 
-add_executable(mysqlConnectionPool "test.cpp" ConnectionPoll.cpp ConnectionPoll.h MysqlConn.cpp MysqlConn.h)
+add_executable(mysqlConnectionPool "test.cpp" sqlconnectionPoll.cpp sqlconnectionPoll.h MysqlConn.cpp MysqlConn.h)
 target_link_libraries(mysqlConnectionPool jsoncpp mysqlclient)

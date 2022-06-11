@@ -1,5 +1,5 @@
 #include "MysqlConn.h"
-#include "ConnectionPoll.h"
+#include "sqlconnectionPoll.h"
 #include <iostream>
 #include <unistd.h>
 #include <thread>
@@ -26,7 +26,7 @@ void op1(int begin, int end) {
     }
 }
 
-void op2(ConnectionPoll* pool, int begin, int end) {
+void op2(sqlconnectionPoll* pool, int begin, int end) {
     for (int i = begin; i < end; i++) {
         shared_ptr<MysqlConn> conn = pool->getConnection();
         string sql = "INSERT INTO `collegeid` (`collegeid`, `collegename`, `whichcampus`) VALUES(5, '计算机学院', '厦门');";
@@ -42,7 +42,7 @@ void test1() {
     auto length = end - begin;
     cout << "非连接池 单线程 用时" << length.count() << "纳秒," << length.count()/ 1000000 << "毫秒" << endl;
 #else 
-    ConnectionPoll *pool = ConnectionPoll::getConnectionPoll();
+    sqlconnectionPoll *pool = sqlconnectionPoll::getsqlconnectionPoll();
     steady_clock::time_point begin = steady_clock::now();
     op2(pool, 0, 5000);
     steady_clock::time_point end = steady_clock::now();
@@ -70,7 +70,7 @@ void test2() {
     auto length = end - begin;
     cout << "非连接池 多线程 用时" << length.count() << "纳秒," << length.count()/ 1000000 << "毫秒" << endl;
 #else 
-    ConnectionPoll *pool = ConnectionPoll::getConnectionPoll();
+    sqlconnectionPoll *pool = sqlconnectionPoll::getsqlconnectionPoll();
     steady_clock::time_point begin = steady_clock::now();
     thread t1(op2, pool, 0, 1000);
     thread t2(op2, pool, 1000, 2000);
