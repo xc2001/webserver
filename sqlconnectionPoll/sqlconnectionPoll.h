@@ -9,8 +9,6 @@
 #include <mutex>
 #include <condition_variable>
 
-using namespace std;
-
 using namespace std; 
 
 class sqlconnectionPoll {
@@ -19,8 +17,9 @@ public:
     sqlconnectionPoll(const sqlconnectionPoll& obj) = delete;
     sqlconnectionPoll& operator=(const sqlconnectionPoll& obj) = delete;
     shared_ptr<MysqlConn> getConnection();
-    ~sqlconnectionPoll();
+    
 private:
+    ~sqlconnectionPoll();
     sqlconnectionPoll();
     bool parseJsonFile();
     void produceConnection();
