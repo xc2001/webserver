@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.20)
 project(testjson)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_STANDARD 11)
 add_compile_options(-std=c++11)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("/usr/local/mysql-8.0.26-macos11-arm64/include")

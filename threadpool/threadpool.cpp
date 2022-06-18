@@ -73,16 +73,14 @@ void* threadpool::work(void *arg) {
                 if (pool->live_thr_num > pool->min_thr_num) {
                     printf("thread 0x%x is exiting\n", pthread_self());
                     pool->live_thr_num--;
-                    lock.unlock();
-                    pthread_exit(NULL);
+                    return nullptr;
                 }
             }
         }
         if (pool->shutdown == true) {
             printf("thread 0x%x is exiting\n", pthread_self());
             pool->live_thr_num--;
-            lock.unlock();
-            pthread_exit(NULL);
+            return nullptr;
         }
 
         threadpool_task_t *task = pool->task_queue.front();
