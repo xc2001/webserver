@@ -1,21 +1,24 @@
-// #include "threadpool.h"
+#include "threadpool.h"
 #include <iostream>
 #include <unistd.h>
 #include <thread>
 #include <pthread.h>
+#include <map>
 
 using namespace std;
 
 void *work(void *arg) {
     cout << 1 << endl;
-    pthread_exit(NULL);
     cout << "pthread_exit" << endl;
+    pthread_exit(NULL);
+    
 }
 
 int main() {
-    pthread_t pid;
-    pthread_create(&pid, NULL, work, NULL);
-    pthread_detach(pid);
-    sleep(2);
+    threadpool *pool = threadpool::getThreadpool();
+    threadpool_task_t *task = new threadpool_task_t();
+    task->arg = NULL;
+    task->function = work;
+    pool->add_work(work, NULL);
     return 0;
 }

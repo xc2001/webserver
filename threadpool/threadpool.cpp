@@ -1,33 +1,14 @@
 #include "threadpool.h"
 
 using namespace std;
+int idx = 0;
 
-sqlconnectionPoll* m_connectionPoll;  /* 数据库连接池*/
-pthread_mutex_t lockself;               /* 用于锁住本结构体 */    
-pthread_mutex_t thread_counter;     /* 记录忙状态线程个数de琐 -- busy_thr_num */
-
-pthread_cond_t queue_not_full;      /* 当任务队列满时，添加任务的线程阻塞，等待此条件变量 */
-pthread_cond_t queue_not_empty;     /* 任务队列里不为空时，通知等待任务的线程 */
-
-pthread_t *threads;                 /* 存放线程池中每个线程的tid。数组 */
-pthread_t adjust_tid;               /* 存管理线程tid */
-list<threadpool_task_t *> task_queue;      /* 任务队列(数组首地址) */
-
-int min_thr_num;                    /* 线程池最小线程数 */
-int max_thr_num;                    /* 线程池最大线程数 */
-int live_thr_num;                   /* 当前存活线程个数 */
-int busy_thr_num;                   /* 忙状态线程个数 */
-int wait_exit_thr_num;              /* 要销毁的线程个数 */
-int queue_max_size;                 /* task_queue队列可容纳任务数上限 */
-
-bool shutdown;                       /* 标志位，线程池使用状态，true或false */
 threadpool* threadpool::getThreadpool(int min_thr_num, int max_thr_num, int queue_max_size) {
     threadpool *pool = new threadpool(min_thr_num, max_thr_num, queue_max_size);
     return pool;
 }
 
 threadpool::threadpool(int min_thr_num, int max_thr_num, int queue_max_size):min_thr_num(min_thr_num), max_thr_num(max_thr_num), queue_max_size(queue_max_size) {
-    m_connectionPoll = sqlconnectionPoll::getsqlconnectionPoll();
     busy_thr_num = 0;
     live_thr_num = min_thr_num;
     wait_exit_thr_num = 0;
@@ -46,7 +27,22 @@ threadpool::threadpool(int min_thr_num, int max_thr_num, int queue_max_size):min
         }
     }
     pthread_create(&adjust_tid, NULL, adjustThread, (void *)this);
-    pthread_detach(adjust_tid);
+}
+
+threadpool::~threadpool() {
+    while (task_queue.size()) {
+        threadpool_task_t *task = task_queue.front();
+        delete task;
+        task_queue.pop();
+    }
+    shutdown = true;
+    pthread_join(adjust_tid, NULL);
+    while(live_thr_num) {
+        queue_not_empty.notify_all();
+    }
+    cout << "live_thr_num:" << live_thr_num << endl;
+    delete[] threads;
+    
 }
 
 int threadpool::add_work(void*(*function)(void *arg), void *arg) {
@@ -61,7 +57,7 @@ int threadpool::add_work(void*(*function)(void *arg), void *arg) {
     threadpool_task_t *task = new threadpool_task_t();
     task->function = function;
     task->arg = arg;
-    task_queue.push_back(task);
+    task_queue.push(task);
     queue_not_empty.notify_one();
     return 0;
 }
@@ -77,18 +73,37 @@ void* threadpool::work(void *arg) {
                 if (pool->live_thr_num > pool->min_thr_num) {
                     printf("thread 0x%x is exiting\n", pthread_self());
                     pool->live_thr_num--;
+                    lock.unlock();
                     pthread_exit(NULL);
                 }
             }
         }
-        
         if (pool->shutdown == true) {
             printf("thread 0x%x is exiting\n", pthread_self());
+            pool->live_thr_num--;
+            lock.unlock();
             pthread_exit(NULL);
         }
+
+        threadpool_task_t *task = pool->task_queue.front();
+        pool->task_queue.pop();
+        pool->queue_not_full.notify_all();
+        lock.unlock();
+        printf("thread 0x%x start working\n", pthread_self());
+        lock_guard<mutex> busy_locker(pool->thread_counter);
+        pool->busy_thr_num++;
+        (*(task->function))(task->arg);
+        printf("thread 0x%x end working\n", pthread_self());
+        pool->busy_thr_num--;
     }
+    pthread_exit(NULL);
 }
 
-void* threadpool::adjustThread(void *pool) {
-    
+void* threadpool::adjustThread(void *arg) {
+    // threadpool *pool = (threadpool *)arg;
+    // while (!pool->shutdown) {
+    //     lock_guard<mutex> locker(pool->lockself);
+    //     lock_guard<mutex> busyLocker(pool->lockself);
+
+    // }
 }
