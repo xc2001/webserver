@@ -30,11 +30,6 @@ threadpool::threadpool(int min_thr_num, int max_thr_num, int queue_max_size):min
 }
 
 threadpool::~threadpool() {
-    while (task_queue.size()) {
-        threadpool_task_t *task = task_queue.front();
-        delete task;
-        task_queue.pop();
-    }
     shutdown = true;
     pthread_join(adjust_tid, NULL);
     while(live_thr_num) {
@@ -42,7 +37,12 @@ threadpool::~threadpool() {
     }
     cout << "live_thr_num:" << live_thr_num << endl;
     delete[] threads;
-    
+    //bugfix:防止正在运行的任务被销毁
+    while (task_queue.size()) {
+        threadpool_task_t *task = task_queue.front();
+        delete task;
+        task_queue.pop();
+    }
 }
 
 int threadpool::add_work(void*(*function)(void *arg), void *arg) {
